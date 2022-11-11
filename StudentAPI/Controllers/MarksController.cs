@@ -48,7 +48,7 @@ namespace StudentAPI.Controllers
 
             //var query = _studentDbContext.
 
-            var marks = await _studentDbContext.Marks
+            var studentMarks = await _studentDbContext.Marks
                  .Where(m =>
                      _studentDbContext.Students
                      .Where(s => s.StudentName == studentName)
@@ -56,9 +56,9 @@ namespace StudentAPI.Controllers
                      .Contains(m.StudentId)
                      ).ToListAsync();
 
-            if (marks != null)
+            if (studentMarks != null)
             {
-                return Ok(marks);
+                return Ok(studentMarks);
             }
 
             return NotFound();
@@ -68,20 +68,34 @@ namespace StudentAPI.Controllers
         [Route("{subjectName}")]
         public async Task<IActionResult> GetMarkBySubjectName(string subjectName)
         {
-            var mark = await (from Mark in _studentDbContext.Marks where Mark.Id == id select Mark).SingleAsync();
+            var subjectMarks = await _studentDbContext.Marks.Where(m =>
+            _studentDbContext.Subjects
+            .Where(s => s.SubjectName == subjectName)
+            .Select(id => id.Id)
+            .Contains(m.SubjectId)).ToListAsync();
 
-            if (mark != null)
+            if (subjectMarks != null)
             {
-                return Ok(mark);
+                return Ok(subjectMarks);
             }
 
             return NotFound();
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddMark(Mark mark)
+        public async Task<IActionResult> AddMark(string studentName, string subjectName, int marks)
         {
-            if (mark == null) return BadRequest();
+            if (studentName == null || subjectName == null || marks == null) return BadRequest();
+
+            var studentId = await _studentDbContext.Students.Where(s => s.StudentName == studentName).Select(id => id.Id).FirstAsync();
+            var subjectId = await _studentDbContext.Subjects.Where(s => s.SubjectName == subjectName).Select(id => id.Id).FirstAsync();
+
+            var mark = new Mark()
+            {
+                SubjectId = subjectId,
+                StudentId = studentId,
+                StudentMarks = marks,
+            };
 
             await _studentDbContext.Marks.AddAsync(mark);
             await _studentDbContext.SaveChangesAsync();
@@ -89,36 +103,36 @@ namespace StudentAPI.Controllers
             return Ok(mark);
         }
 
-        [HttpPut]
-        [Route("{id}")]
-        public async Task<IActionResult> UpdateMark(int id, Student student)
-        {
-            var existingStudent = await (from Student in _studentDbContext.Students where Student.Id == id select Student).SingleAsync();
+        //[HttpPut]
+        //[Route("{id}")]
+        //public async Task<IActionResult> UpdateMark(int id, Student student)
+        //{
+        //    var existingStudent = await (from Student in _studentDbContext.Students where Student.Id == id select Student).SingleAsync();
 
-            if (existingStudent != null)
-            {
-                existingStudent.StudentName = student.StudentName;
-                await _studentDbContext.SaveChangesAsync();
-                return Ok(existingStudent);
-            }
+        //    if (existingStudent != null)
+        //    {
+        //        existingStudent.StudentName = student.StudentName;
+        //        await _studentDbContext.SaveChangesAsync();
+        //        return Ok(existingStudent);
+        //    }
 
-            return NotFound();
-        }
+        //    return NotFound();
+        //}
 
-        [HttpDelete]
-        [Route("{id}")]
-        public async Task<IActionResult> DeleteStudent(int id)
-        {
-            var existingStudent = await (from Student in _studentDbContext.Students where Student.Id == id select Student).SingleAsync();
+        //[HttpDelete]
+        //[Route("{id}")]
+        //public async Task<IActionResult> DeleteStudent(int id)
+        //{
+        //    var existingStudent = await (from Student in _studentDbContext.Students where Student.Id == id select Student).SingleAsync();
 
-            if (existingStudent != null)
-            {
-                _studentDbContext.Students.Remove(existingStudent);
-                await _studentDbContext.SaveChangesAsync();
-                return Ok(existingStudent);
-            }
+        //    if (existingStudent != null)
+        //    {
+        //        _studentDbContext.Students.Remove(existingStudent);
+        //        await _studentDbContext.SaveChangesAsync();
+        //        return Ok(existingStudent);
+        //    }
 
-            return NotFound();
-        }
+        //    return NotFound();
+        //}
     }
 }
