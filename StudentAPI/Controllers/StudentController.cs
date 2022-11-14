@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudentAPI.Data;
 using StudentAPI.Models;
+using StudentAPI.Models.DTO;
 
 namespace StudentAPI.Controllers
 {
@@ -19,7 +20,8 @@ namespace StudentAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllStudents()
         {
-            var students = await (from Student in _studentDbContext.Students select Student).ToListAsync();
+            var students = await (from Student in _studentDbContext.Students
+                                  select Student).ToListAsync();
             return Ok(students);
         }
 
@@ -27,7 +29,9 @@ namespace StudentAPI.Controllers
         [Route("{id}")]
         public async Task<IActionResult> GetStudentById(int id)
         {
-            var student = await (from Student in _studentDbContext.Students where Student.Id == id select Student).SingleAsync();
+            var student = await (from Student in _studentDbContext.Students
+                                 where Student.Id == id
+                                 select Student).FirstOrDefaultAsync();
 
             if (student != null)
             {
@@ -38,9 +42,14 @@ namespace StudentAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddStudent(Student student)
+        public async Task<IActionResult> AddStudent(StudentDto studentDto)
         {
-            if (student == null) return BadRequest();
+            if (studentDto.StudentName == null) return BadRequest();
+
+            var student = new Student()
+            {
+                StudentName = studentDto.StudentName,
+            };
 
             await _studentDbContext.Students.AddAsync(student);
             await _studentDbContext.SaveChangesAsync();
@@ -50,13 +59,15 @@ namespace StudentAPI.Controllers
 
         [HttpPut]
         [Route("{id}")]
-        public async Task<IActionResult> UpdateStudent(int id, Student student)
+        public async Task<IActionResult> UpdateStudent(int id, StudentDto studentDto)
         {
-            var existingStudent = await (from Student in _studentDbContext.Students where Student.Id == id select Student).SingleAsync();
+            var existingStudent = await (from Student in _studentDbContext.Students
+                                         where Student.Id == id
+                                         select Student).FirstOrDefaultAsync();
 
             if (existingStudent != null)
             {
-                existingStudent.StudentName = student.StudentName;
+                existingStudent.StudentName = studentDto.StudentName;
                 await _studentDbContext.SaveChangesAsync();
                 return Ok(existingStudent);
             }
@@ -68,7 +79,9 @@ namespace StudentAPI.Controllers
         [Route("{id}")]
         public async Task<IActionResult> DeleteStudent(int id)
         {
-            var existingStudent = await (from Student in _studentDbContext.Students where Student.Id == id select Student).SingleAsync();
+            var existingStudent = await (from Student in _studentDbContext.Students
+                                         where Student.Id == id
+                                         select Student).FirstOrDefaultAsync();
 
             if (existingStudent != null)
             {

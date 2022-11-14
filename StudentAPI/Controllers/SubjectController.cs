@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudentAPI.Data;
 using StudentAPI.Models;
+using StudentAPI.Models.DTO;
 
 namespace StudentAPI.Controllers
 {
@@ -19,7 +20,8 @@ namespace StudentAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllSubjects()
         {
-            var subjects = await (from Subject in _studentDbContext.Subjects select Subject).ToListAsync();
+            var subjects = await (from Subject in _studentDbContext.Subjects
+                                  select Subject).ToListAsync();
             return Ok(subjects);
         }
 
@@ -27,7 +29,9 @@ namespace StudentAPI.Controllers
         [Route("{id}")]
         public async Task<IActionResult> GetSubjectById(int id)
         {
-            var subject = await (from Subject in _studentDbContext.Subjects where Subject.Id == id select Subject).SingleAsync();
+            var subject = await (from Subject in _studentDbContext.Subjects
+                                 where Subject.Id == id
+                                 select Subject).FirstOrDefaultAsync();
 
             if (subject != null)
             {
@@ -38,9 +42,14 @@ namespace StudentAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddSubject(Subject subject)
+        public async Task<IActionResult> AddSubject(SubjectDto subjectDto)
         {
-            if (subject == null) return BadRequest();
+            if (subjectDto.SubjectName == null) return BadRequest();
+
+            var subject = new Subject()
+            {
+                SubjectName = subjectDto.SubjectName,
+            };
 
             await _studentDbContext.Subjects.AddAsync(subject);
             await _studentDbContext.SaveChangesAsync();
@@ -50,13 +59,15 @@ namespace StudentAPI.Controllers
 
         [HttpPut]
         [Route("{id}")]
-        public async Task<IActionResult> UpdateSubject(int id, Subject subject)
+        public async Task<IActionResult> UpdateSubject(int id, SubjectDto subjectDto)
         {
-            var existingSubject = await (from Subject in _studentDbContext.Subjects where Subject.Id == id select Subject).SingleAsync();
+            var existingSubject = await (from Subject in _studentDbContext.Subjects
+                                         where Subject.Id == id
+                                         select Subject).FirstOrDefaultAsync();
 
             if (existingSubject != null)
             {
-                existingSubject.SubjectName = subject.SubjectName;
+                existingSubject.SubjectName = subjectDto.SubjectName;
                 await _studentDbContext.SaveChangesAsync();
                 return Ok(existingSubject);
             }
@@ -68,7 +79,9 @@ namespace StudentAPI.Controllers
         [Route("{id}")]
         public async Task<IActionResult> DeleteSubject(int id)
         {
-            var existingSubject = await (from Subject in _studentDbContext.Subjects where Subject.Id == id select Subject).SingleAsync();
+            var existingSubject = await (from Subject in _studentDbContext.Subjects
+                                         where Subject.Id == id
+                                         select Subject).FirstOrDefaultAsync();
 
             if (existingSubject != null)
             {
